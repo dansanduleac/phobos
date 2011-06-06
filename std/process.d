@@ -56,12 +56,17 @@ version(Posix)
     {
         // https://www.gnu.org/software/gnulib/manual/html_node/environ.html
         private extern(C) extern __gshared char*** _NSGetEnviron();
-        // need to declare environ = *_NSGetEnviron() in static this()
+        private const(char**) getEnviron() {
+          return *(_NSGetEnviron());
+        }
     }
     else
     {
         // Made available by the C runtime:
         private extern(C) extern __gshared const char** environ;
+        private const(char**) getEnviron() {
+          return environ;
+        }
     }
 }
 version(Windows)
@@ -495,15 +500,6 @@ alias Environment environment;
 
 abstract final class Environment
 {
-    // initiaizes the value of environ for OSX
-    version(OSX)
-    {
-        static private char** environ;
-        static this()
-        {
-            environ = * _NSGetEnviron();
-        }
-    }
 static:
 
 private:
@@ -633,6 +629,7 @@ public:
 
         version(Posix)
         {
+            auto environ = getEnviron();
             for (int i=0; environ[i] != null; ++i)
             {
                 immutable varDef = to!string(environ[i]);
